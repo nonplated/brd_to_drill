@@ -2,32 +2,30 @@ import collections
 import xml.etree.ElementTree as ET
 from geomath import calculate_azimuth, calculate_point_by_azimuth, calculate_length
 
+
 class Drill():
     Hole = collections.namedtuple(
         'Hole', ['type', 'x', 'y', 'drill', 'extent'])
     Tool = collections.namedtuple(
         'Tool', ['nr', 'drill', 'is_route', 'comment'])
     Element = collections.namedtuple(
-        'Element', ['package','x','y','rot'])
+        'Element', ['package', 'x', 'y', 'rot'])
 
     # all values will be saved here in MM (milimeters)
     # but can be exported as INCH (inches)
     available_units = ('INCH', 'MM')
-    holes_mm = []
+    _holes_mm = []
+
+    def count_all_holes(self):
+        return len(self._holes_mm)
 
     def import_from_xml(self, xml_filename):
-        self.holes_mm = []  # reset list
+        self._holes_mm = []  # reset list
         elements = []
 
         tree = ET.parse(xml_filename)
         root = tree.getroot()
 
-        '''
-        <package name="MA05-1">
-            <description>&lt;b&gt;PIN HEADER&lt;/b&gt;</description>
-            <pad name="1" x="-5.08" y="0" drill="1.016" rot="R90"/>
-        <element package="MA05-1" x="30.6" y="27.675" smashed="yes" rot="R90">
-        '''
         for child in root.iter('element'):
             element = self.Element(
                 package=child.attrib.get('package'),
@@ -35,8 +33,7 @@ class Drill():
                 y=float(child.attrib.get('y')),
                 rot=child.attrib.get('rot')
             )
-            elements.append( element )
-            print(element)
+            elements.append(element)
 
         for child in root.iter('via'):
             attr = child.attrib
@@ -47,9 +44,7 @@ class Drill():
                 drill=attr.get('drill'),
                 extent=attr.get('extent')
             )
-            self.holes_mm.append(hole)
-            #print(child.tag, child.attrib)
-            #print(hole)
+            self._holes_mm.append(hole)
 
         for child in root.iter('hole'):
             attr = child.attrib
@@ -60,24 +55,13 @@ class Drill():
                 drill=attr.get('drill'),
                 extent=attr.get('extent')
             )
-            self.holes_mm.append(hole)
-            #print(child.tag, child.attrib)
-            #print(h            self.holes_mm.append(hole)ole)
+            self._holes_mm.append(hole)
 
-        for child in root.iter('package'):
-            print(child.tag, child.attrib)
-            for ch in child.attrib:
-                print(ch)
-
-        print('.//package')
         for e in elements:
-            print(e)
-            s='.//package[@name="'+e.package+'"]/pad'
-            print(s)
-            for pad in root.findall(s):
-                attr= pad.attrib
+            for pad in root.findall('.//package[@name="'+e.package+'"]/pad'):
+                attr = pad.attrib
                 if attr.get('drill'):
-                    if e.rot: # if rotation is needed
+                    if e.rot:  # if rotation is needed
                         az = calculate_azimuth(
                             e.x,
                             e.y,
@@ -91,7 +75,7 @@ class Drill():
                             e.y + float(attr.get('y'))
                         )
                         rotation_degrees = int(e.rot[1:])
-                        if e.rot[0]=='R': # left rotation!
+                        if e.rot[0] == 'R':  # left rotation!
                             rotation_grads = - rotation_degrees / 0.9
                         else:
                             rotation_grads = rotation_degrees / 0.9
@@ -105,13 +89,13 @@ class Drill():
                         new_y = e.y
 
                     hole = self.Hole(
-                        type = 'pad',
-                        x= new_x,
-                        y= new_y,
-                        drill = attr.get('drill'),
-                        extent = attr.get('extent')
+                        type='pad',
+                        x=new_x,
+                        y=new_y,
+                        drill=attr.get('drill'),
+                        extent=attr.get('extent')
                     )
-                    self.holes_mm.append(hole)
+                    self._holes_mm.append(hole)
 
         return True
 
@@ -142,7 +126,7 @@ class Drill():
 
     def _get_tools(self, hole_type=[], hole_extent=[]):
         # get tool sizes from holes info
-        tools_sizes = [hole.drill for hole in self.holes_mm]
+        tools_sizes = [hole.drill for hole in self._holes_mm]
         # make it unique
         tools_sizes = list(set(tools_sizes))
         # sort ascending
@@ -185,15 +169,20 @@ class Drill():
         output = []
         for tool in tools_table:
             holes = [hole
-                     for hole in self.holes_mm
+                     for hole in self._holes_mm
                      if hole.drill == tool.drill]
             output.append('T{:02d}'.format(int(tool.nr)))
             for h in holes:
-                if units.upper()=='INCH':
-                    output.append(self._get_formatted_coords(h.x/25.4, h.y/25.4, 2, 4))
+                if units.upper() == 'INCH':
+                    output.append(
+                        self._get_formatted_coords(
+                            h.x/25.4, h.y/25.4, 2, 4)
+                        )
                 else:
-                    output.append(self._get_formatted_coords(h.x, h.y, 4, 2))
-                    #output.append('X{:=03f}Y{:03f}'.format(h.x, h.y))
+                    output.append(
+                        self._get_formatted_coords(
+                            h.x, h.y, 4, 2)
+                        )
         return output, True
 
     def _get_formatted_value(self, value, leading_zeros, trailing_zeros):
@@ -201,20 +190,21 @@ class Drill():
         v = '{:0=18.10f}'.format(float(value)).partition('.')
         a = v[0][-leading_zeros:]
         b = v[2][:trailing_zeros]
-        if float(value)<0: a='-'+a
+        if float(value) < 0:
+            a = '-'+a
         # this is important check, we dont cut leading number
         c = int(a)
         d = int(v[0])
-        #print('v,a,b,c,d',v,a,b,c,d)
         assert c == d
-        return '{:s}{:s}'.format(a,b)
+        return '{:s}{:s}'.format(a, b)
 
     def _get_formatted_coords(self, x, y, leading_zeros, trailing_zeros):
         new_coords = 'X{}Y{}'.format(
-            self._get_formatted_value(x,leading_zeros,trailing_zeros),
-            self._get_formatted_value(y,leading_zeros, trailing_zeros)
+            self._get_formatted_value(x, leading_zeros, trailing_zeros),
+            self._get_formatted_value(y, leading_zeros, trailing_zeros)
         )
         return new_coords
+
 
 if __name__ == "__main__":
     print('This is a module only. Run the main program.')
