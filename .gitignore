@@ -1,3 +1,5 @@
 *.brd
 __pycache__/
-
+*.ini
+*.gko
+*.txt

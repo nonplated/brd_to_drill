@@ -1,19 +1,79 @@
 import collections
-
+import xml.etree.ElementTree as ET
 
 class Drill():
     Hole = collections.namedtuple(
         'Hole', ['type', 'x', 'y', 'drill', 'extent'])
     Tool = collections.namedtuple(
         'Tool', ['nr', 'drill', 'is_route', 'comment'])
+    Element = collections.namedtuple(
+        'Element', ['package','x','y','rot'])
 
     # all values will be saved here in MM (milimeters)
     # but can be exported as INCH (inches)
     available_units = ('INCH', 'MM')
     holes_mm = []
 
-    def import_from_xml(self, xml_content):
+    def import_from_xml(self, xml_filename):
         self.holes_mm = []  # reset list
+
+        tree = ET.parse(xml_filename)
+        root = tree.getroot()
+
+        '''
+        <package name="MA05-1">
+            <description>&lt;b&gt;PIN HEADER&lt;/b&gt;</description>
+            <pad name="1" x="-5.08" y="0" drill="1.016" rot="R90"/>
+        <element package="MA05-1" x="30.6" y="27.675" smashed="yes" rot="R90">
+        '''
+        for child in root.iter('element'):
+            element = self.Element(
+                package=child.attrib.get('name'),
+                x=child.attrib.get('x'),
+                y=child.attrib.get('y'),
+                rot=child.attrib.get('rot')
+            )
+            print(element)
+
+        for child in root.iter('via'):
+            print(child.tag, child.attrib)
+            attr = child.attrib
+            hole = self.Hole(
+                type='via',
+                x=float(attr.get('x')),
+                y=float(attr.get('y')),
+                drill=attr.get('drill'),
+                extent=attr.get('extent')
+            )
+            self.holes_mm.append(hole)
+            print(hole)
+
+        for child in root.iter('hole'):
+            print(child.tag, child.attrib)
+            attr = child.attrib
+            hole = self.Hole(
+                type='hole',
+                x=float(attr.get('x')),
+                y=float(attr.get('y')),
+                drill=attr.get('drill'),
+                extent=attr.get('extent')
+            )
+            self.holes_mm.append(hole)
+            print(hole)
+
+        for child in root.iter('pad'):
+            print(child.tag, child.attrib)
+            attr = child.attrib
+            hole = self.Hole(
+                type='pad',
+                x=float(attr.get('x')),
+                y=float(attr.get('y')),
+                drill=attr.get('drill'),
+                extent=attr.get('extent')
+            )
+            self.holes_mm.append(hole)
+            print(hole)
+        '''
         # keep drill value as string type for a better comparing
         hole = self.Hole(type='via', x=200.22, y=220.22, drill='0.7', extent='1-16')
         self.holes_mm.append(hole)
@@ -23,6 +83,7 @@ class Drill():
         self.holes_mm.append(hole)
         hole = self.Hole(type='via', x=300.333, y=330.333, drill='2', extent='1-16')
         self.holes_mm.append(hole)
+        '''
         return True
 
     def get_excellon_format(self, units_header='INCH', units_body='INCH'):
@@ -102,9 +163,8 @@ class Drill():
                 if units.upper()=='INCH':
                     output.append(self._get_formatted_coords(h.x/25.4, h.y/25.4, 2, 4))
                 else:
-                    output.append(self._get_formatted_coords(h.x, h.y, 3, 3))
+                    output.append(self._get_formatted_coords(h.x, h.y, 4, 2))
                     #output.append('X{:=03f}Y{:03f}'.format(h.x, h.y))
-        print(output)
         return output, True
 
     def _get_formatted_value(self, value, leading_zeros, trailing_zeros):
@@ -112,9 +172,11 @@ class Drill():
         v = '{:0=18.10f}'.format(float(value)).partition('.')
         a = v[0][-leading_zeros:]
         b = v[2][:trailing_zeros]
+        if float(value)<0: a='-'+a
         # this is important check, we dont cut leading number
         c = int(a)
         d = int(v[0])
+        #print('v,a,b,c,d',v,a,b,c,d)
         assert c == d
         return '{:s}{:s}'.format(a,b)
 
