@@ -1,5 +1,6 @@
 import collections
 import xml.etree.ElementTree as ET
+from geomath import calculate_azimuth, calculate_point_by_azimuth, calculate_length
 
 class Drill():
     Hole = collections.namedtuple(
@@ -16,6 +17,7 @@ class Drill():
 
     def import_from_xml(self, xml_filename):
         self.holes_mm = []  # reset list
+        elements = []
 
         tree = ET.parse(xml_filename)
         root = tree.getroot()
@@ -28,15 +30,15 @@ class Drill():
         '''
         for child in root.iter('element'):
             element = self.Element(
-                package=child.attrib.get('name'),
-                x=child.attrib.get('x'),
-                y=child.attrib.get('y'),
+                package=child.attrib.get('package'),
+                x=float(child.attrib.get('x')),
+                y=float(child.attrib.get('y')),
                 rot=child.attrib.get('rot')
             )
+            elements.append( element )
             print(element)
 
         for child in root.iter('via'):
-            print(child.tag, child.attrib)
             attr = child.attrib
             hole = self.Hole(
                 type='via',
@@ -46,10 +48,10 @@ class Drill():
                 extent=attr.get('extent')
             )
             self.holes_mm.append(hole)
-            print(hole)
+            #print(child.tag, child.attrib)
+            #print(hole)
 
         for child in root.iter('hole'):
-            print(child.tag, child.attrib)
             attr = child.attrib
             hole = self.Hole(
                 type='hole',
@@ -59,31 +61,58 @@ class Drill():
                 extent=attr.get('extent')
             )
             self.holes_mm.append(hole)
-            print(hole)
+            #print(child.tag, child.attrib)
+            #print(h            self.holes_mm.append(hole)ole)
 
-        for child in root.iter('pad'):
+        for child in root.iter('package'):
             print(child.tag, child.attrib)
-            attr = child.attrib
-            hole = self.Hole(
-                type='pad',
-                x=float(attr.get('x')),
-                y=float(attr.get('y')),
-                drill=attr.get('drill'),
-                extent=attr.get('extent')
-            )
-            self.holes_mm.append(hole)
-            print(hole)
-        '''
-        # keep drill value as string type for a better comparing
-        hole = self.Hole(type='via', x=200.22, y=220.22, drill='0.7', extent='1-16')
-        self.holes_mm.append(hole)
-        hole = self.Hole(type='via', x=1, y=110, drill='0.6', extent='1-16')
-        self.holes_mm.append(hole)
-        hole = self.Hole(type='via', x=300, y=330, drill='0.5', extent='1-16')
-        self.holes_mm.append(hole)
-        hole = self.Hole(type='via', x=300.333, y=330.333, drill='2', extent='1-16')
-        self.holes_mm.append(hole)
-        '''
+            for ch in child.attrib:
+                print(ch)
+
+        print('.//package')
+        for e in elements:
+            print(e)
+            s='.//package[@name="'+e.package+'"]/pad'
+            print(s)
+            for pad in root.findall(s):
+                attr= pad.attrib
+                if attr.get('drill'):
+                    if e.rot: # if rotation is needed
+                        az = calculate_azimuth(
+                            e.x,
+                            e.y,
+                            e.x + float(attr.get('x')),
+                            e.y + float(attr.get('y'))
+                        )
+                        lg = calculate_length(
+                            e.x,
+                            e.y,
+                            e.x + float(attr.get('x')),
+                            e.y + float(attr.get('y'))
+                        )
+                        rotation_degrees = int(e.rot[1:])
+                        if e.rot[0]=='R': # left rotation!
+                            rotation_grads = - rotation_degrees / 0.9
+                        else:
+                            rotation_grads = rotation_degrees / 0.9
+
+                        new_az = az + rotation_grads
+                        new_x, new_y = calculate_point_by_azimuth(
+                            e.x, e.y, az + rotation_grads, lg
+                        )
+                    else:
+                        new_x = e.x
+                        new_y = e.y
+
+                    hole = self.Hole(
+                        type = 'pad',
+                        x= new_x,
+                        y= new_y,
+                        drill = attr.get('drill'),
+                        extent = attr.get('extent')
+                    )
+                    self.holes_mm.append(hole)
+
         return True
 
     def get_excellon_format(self, units_header='INCH', units_body='INCH'):

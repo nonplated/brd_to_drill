@@ -19,7 +19,7 @@ def get_some_info_from_xml(filename):
 def main():
     drl = Drill()
     drl.import_from_xml('__.brd')
-    drl_text = drl.get_excellon_format('MM','INCH')
+    drl_text = drl.get_excellon_format('INCH','INCH')
     saveToFile(drl_text,'new_drill.txt')
 
 if __name__ == "__main__":
