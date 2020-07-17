@@ -143,7 +143,7 @@ class Drill():
 
     def _check_units(self, units):
         if units.upper() not in self.available_units:
-            raise Exception('ERROR: Not recognized units! Please select one from: {}'.format(
+            raise Exception('[ ERROR ] --- Not recognized units! Please select one from: {}'.format(
                 self.available_units))
         return True
 
@@ -158,9 +158,9 @@ class Drill():
                     (float(tool.drill), float(tool.drill)/25.4)[units == 'INCH'])
                 )
         except ValueError:
-            return 'ERROR: Some value is not float.', False
+            return '[ ERROR ] --- Some value is not float.', False
         except:
-            return 'ERROR: Cannot export tools table.', False
+            return '[ ERROR ] --- Cannot export tools table.', False
         return output, True
 
     def _get_body_list(self, units='INCH'):

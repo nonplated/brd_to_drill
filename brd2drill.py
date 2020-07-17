@@ -6,20 +6,24 @@ import os
 
 
 def saveToFile(filecontent, filename):
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(filecontent)
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(filecontent)
+    except Exception as e:
+        print(e)
+        return False
+    return True
 
 
 def main(args):
     drl = Drill()
     drl.import_from_xml(args.input_file_brd)
-    drl_text = drl.get_excellon_format('INCH', 'INCH')
-    saveToFile(drl_text, args.output_file_drill)
-    if os.path.isfile(args.output_file_drill):
+    drl_text = drl.get_excellon_format(args.header, args.body)
+    if not saveToFile(drl_text, args.output_file_drill):
+        sys.exit('[ ERROR ] --- Can\'t save the output file!')
+    else:
         print('Total holes found: {}'.format(drl.count_all_holes()))
         print('File saved as: {}'.format(args.output_file_drill))
-    else:
-        print('ERROR. File not saved ({})'.format(args.output_file_drill))
 
 
 if __name__ == "__main__":
@@ -52,7 +56,7 @@ if __name__ == "__main__":
             if answer.upper() != 'Y':
                 sys.exit('OK, exiting process.')
     else:
-        sys.exit('Not found import file: {}'
+        sys.exit('[ WARNING] --- Not found import file: {}'
                  .format(args.input_file_brd))
 
     main(args)
