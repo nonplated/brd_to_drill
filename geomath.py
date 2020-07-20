@@ -47,3 +47,11 @@ def calculate_length(x1, y1, x2, y2):
     else:
         d = math.sqrt(((y2-y1)**2)+((x2-x1)**2))
         return d
+
+
+if __name__ == "__main__":
+    '''
+    If run as a main program, run tests
+    '''
+    import os
+    os.system('python -m unittest test_geomath.py')

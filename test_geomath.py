@@ -39,12 +39,12 @@ class TestGeomath(unittest.TestCase):
 			# calculate length between points
 			lg = geomath.calculate_length(x1, y1, x2, y2)
 
-			# try to calcalute point x1,y1 from beginnings
+			# try to calcalute point x1,y1 having x2,y2,az,lg
 			new_x1, new_y1 = geomath.calculate_point_by_azimuth(x2, y2, az+200, lg)
 			self.assertEqual( round(new_x1, accuracy_decimal), round(x1, accuracy_decimal))
 			self.assertEqual( round(new_y1, accuracy_decimal), round(y1, accuracy_decimal))
 
-			# try to calcalute point x2,y2 from beginnings
+			# try to calcalute point x2,y2 having x1,y1,az,lg
 			new_x2, new_y2 = geomath.calculate_point_by_azimuth(x1, y1, az, lg)
 			self.assertEqual( round(new_x2, accuracy_decimal), round(x2, accuracy_decimal))
 			self.assertEqual( round(new_y2, accuracy_decimal), round(y2, accuracy_decimal))

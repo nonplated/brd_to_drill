@@ -14,6 +14,7 @@ class Drill():
     # all values will be saved here in MM (milimeters)
     # but can be exported as INCH (inches)
     available_units = ('INCH', 'MM')
+    _default_units = self.available_units[0]
     _holes_mm = []
 
     def count_all_holes(self):
@@ -99,7 +100,7 @@ class Drill():
 
         return True
 
-    def get_excellon_format(self, units_header='INCH', units_body='INCH'):
+    def get_excellon_format(self, units_header=self._default_units, units_body=self._default_units):
         self._check_units(units_header)
         self._check_units(units_body)
         tools_list, is_success = self._get_tools_list(units_header)
@@ -147,7 +148,7 @@ class Drill():
                 self.available_units))
         return True
 
-    def _get_tools_list(self, units='INCH'):
+    def _get_tools_list(self, units=self._default_units):
         self._check_units(units)
         tools_table = self._get_tools_table()
         output = []
@@ -163,7 +164,7 @@ class Drill():
             return '[ ERROR ] --- Cannot export tools table.', False
         return output, True
 
-    def _get_body_list(self, units='INCH'):
+    def _get_body_list(self, units=self._default_units):
         self._check_units(units)
         tools_table = self._get_tools_table()
         output = []
