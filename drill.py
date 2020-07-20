@@ -4,12 +4,40 @@ from geomath import calculate_azimuth, calculate_point_by_azimuth, calculate_len
 
 
 class Drill():
+    '''
+    Class for import drill information from XML formatted BRD EAGLE file
+    and export as Excellon file format.
+    '''
+
     Hole = collections.namedtuple(
         'Hole', ['type', 'x', 'y', 'drill', 'extent'])
+    '''
+        Hole specification:
+            type: string = [via,pad,hole]
+            x,y: float (coords in MM)
+            drill: float (hole diameter in MM)
+            extent: string (layers for hole ex. "1-16")
+    '''
+
     Tool = collections.namedtuple(
         'Tool', ['nr', 'drill', 'is_route', 'comment'])
+    '''
+        Tool specification:
+            nr: int (tool nr, index from 1)
+            drill: float (hole diameter in MM)
+            is_route: boolean (is route)
+            comment: string ()
+    '''
+
     Element = collections.namedtuple(
         'Element', ['package', 'x', 'y', 'rot'])
+    '''
+        Element specification:
+            package: string (package name)
+            x,y: float (element center coords in MM)
+            rot: string (rotation for child objects
+                        relative to x,y / in left direction / degrees)
+    '''
 
     # all values will be saved here in MM (milimeters)
     # but can be exported as INCH (inches)
@@ -18,9 +46,11 @@ class Drill():
     _holes_mm = []
 
     def count_all_holes(self):
+        '''Get count of all holes'''
         return len(self._holes_mm)
 
     def import_from_xml(self, xml_filename):
+        '''Read all holes from XML file'''
         self._holes_mm = []  # reset list
         elements = []
 
@@ -32,7 +62,7 @@ class Drill():
                 package=child.attrib.get('package'),
                 x=float(child.attrib.get('x')),
                 y=float(child.attrib.get('y')),
-                rot=child.attrib.get('rot')
+                rot=child.attrib.get('rot')  # rotation in degress ex. R180
             )
             elements.append(element)
 
@@ -59,6 +89,7 @@ class Drill():
             self._holes_mm.append(hole)
 
         for e in elements:
+            # find all pads in specified package
             for pad in root.findall('.//package[@name="'+e.package+'"]/pad'):
                 attr = pad.attrib
                 if attr.get('drill'):
@@ -85,7 +116,7 @@ class Drill():
                         new_x, new_y = calculate_point_by_azimuth(
                             e.x, e.y, az + rotation_grads, lg
                         )
-                    else:
+                    else:  # without rotation
                         new_x = e.x
                         new_y = e.y
 
@@ -101,6 +132,7 @@ class Drill():
         return True
 
     def get_excellon_format(self, units_header=self._default_units, units_body=self._default_units):
+        '''Get plain text for excellon format file'''
         self._check_units(units_header)
         self._check_units(units_body)
         tools_list, is_success = self._get_tools_list(units_header)
@@ -119,6 +151,7 @@ class Drill():
         return excellon_output
 
     def _get_header_list(self, units='INCH'):
+        '''Get list for a header excellon file'''
         units = units.upper()
         header = []
         header.append(('M71', 'M72')[units == 'INCH'])
@@ -126,6 +159,7 @@ class Drill():
         return header
 
     def _get_tools(self, hole_type=[], hole_extent=[]):
+        '''Get tools list (sizes)'''
         # get tool sizes from holes info
         tools_sizes = [hole.drill for hole in self._holes_mm]
         # make it unique
@@ -135,6 +169,7 @@ class Drill():
         return tools_sizes
 
     def _get_tools_table(self):
+        '''Get tools list (nr, size)'''
         tools_table = []
         tools_sizes = self._get_tools()
         for id, tool in enumerate(tools_sizes):
@@ -143,12 +178,14 @@ class Drill():
         return tools_table
 
     def _check_units(self, units):
+        '''Check units are available'''
         if units.upper() not in self.available_units:
             raise Exception('[ ERROR ] --- Not recognized units! Please select one from: {}'.format(
                 self.available_units))
         return True
 
     def _get_tools_list(self, units=self._default_units):
+        '''Get formatted tools list'''
         self._check_units(units)
         tools_table = self._get_tools_table()
         output = []
@@ -165,6 +202,7 @@ class Drill():
         return output, True
 
     def _get_body_list(self, units=self._default_units):
+        '''Get formatted body list'''
         self._check_units(units)
         tools_table = self._get_tools_table()
         output = []
@@ -178,15 +216,16 @@ class Drill():
                     output.append(
                         self._get_formatted_coords(
                             h.x/25.4, h.y/25.4, 2, 4)
-                        )
+                    )
                 else:
                     output.append(
                         self._get_formatted_coords(
                             h.x, h.y, 4, 2)
-                        )
+                    )
         return output, True
 
     def _get_formatted_value(self, value, leading_zeros, trailing_zeros):
+        '''Get formatted value as text'''
         # in real you dont need the bigger values than {:0=13.6f}
         v = '{:0=18.10f}'.format(float(value)).partition('.')
         a = v[0][-leading_zeros:]
@@ -200,6 +239,7 @@ class Drill():
         return '{:s}{:s}'.format(a, b)
 
     def _get_formatted_coords(self, x, y, leading_zeros, trailing_zeros):
+        '''Get formatted both coords as text'''
         new_coords = 'X{}Y{}'.format(
             self._get_formatted_value(x, leading_zeros, trailing_zeros),
             self._get_formatted_value(y, leading_zeros, trailing_zeros)

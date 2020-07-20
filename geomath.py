@@ -14,12 +14,12 @@ def calculate_azimuth(x1, y1, x2, y2):
     if dx == 0 and dy == 0: # if points are the same
         return None
     if dx == 0:
-        if dy >= 0:
+        if dy > 0:
             return 0  # verticale up
         else:
             return 200  # verticale down
     if dy == 0:
-        if dx >= 0:
+        if dx > 0:
             return 100  # horizontal right
         else:
             return 300  # horizontal left
@@ -55,5 +55,5 @@ if __name__ == "__main__":
     '''
     If run as a main program, run tests
     '''
-    import unittest
-    unittest.main()
+    import os
+    os.system('python -m unittest test_geomath.py')
