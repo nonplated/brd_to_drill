@@ -6,19 +6,25 @@ import random
 class TestGeomath(unittest.TestCase):
 
     def test_calculate_azimuth(self):
-        result = geomath.calculate_azimuth(0, 0, 1, 1)
-        self.assertEqual(round(result, 5), 50)
-
-        result = geomath.calculate_azimuth(0, 0, -999, 999)
-        self.assertEqual(round(result, 5), 350)
-
-        result = geomath.calculate_azimuth(-1000, -1000, 0, -1000)
-        self.assertEqual(round(result, 5), 100)
+        self.assertEqual(
+            round(geomath.calculate_azimuth(0, 0, 1, 1), 5), 50)
+        self.assertEqual(
+            round(geomath.calculate_azimuth(0, 0, -999, 999), 5), 350)
+        self.assertEqual(
+            round(geomath.calculate_azimuth(-1000, -1000, 0, -1000), 5), 100)
+        self.assertEqual(
+            round(geomath.calculate_azimuth(-1000, -1000, 0, -1000), 5), 100)
+        self.assertEqual(
+            geomath.calculate_azimuth(0, 0, 0, 0), None)
+        self.assertEqual(
+            geomath.calculate_azimuth(2, 1, None, 0), None)
+        self.assertEqual(
+            geomath.calculate_azimuth(-1.1, -1.1, -1.1, -1.1), None)
 
     def test_cross(self):
         '''
-		We will set return values from one function to another function,
-		which should return our starting values with lost some accuracy.
+                We will set return values from one function to another function,
+                which should return our starting values with lost some accuracy.
         '''
         random.seed()
 

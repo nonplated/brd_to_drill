@@ -11,6 +11,8 @@ def calculate_azimuth(x1, y1, x2, y2):
         return None
     dy = y2-y1
     dx = x2-x1
+    if dx == 0 and dy == 0: # if points are the same
+        return None
     if dx == 0:
         if dy >= 0:
             return 0  # verticale up
@@ -30,7 +32,7 @@ def calculate_azimuth(x1, y1, x2, y2):
         return 300-fi
     if dx < 0 and dy > 0:  # Q IV  (left, upper)
         return 300-fi
-    return None  # no azimuth --- the points are identical
+    return None  # no azimuth
 
 
 def calculate_point_by_azimuth(x1, y1, a_grad, d):
