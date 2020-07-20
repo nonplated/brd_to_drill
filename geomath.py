@@ -53,5 +53,5 @@ if __name__ == "__main__":
     '''
     If run as a main program, run tests
     '''
-    import os
-    os.system('python -m unittest test_geomath.py')
+    import unittest
+    unittest.main()

@@ -1,9 +1,3 @@
-*.brd
-*.ini
-*.gko
-*.txt
-*.b##
-__.*
-
 __pycache__/
 uploads/
+
