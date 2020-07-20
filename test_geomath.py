@@ -28,10 +28,10 @@ class TestGeomath(unittest.TestCase):
 
 		for ii in range(max_loop_number):
 			# get random coords
-			x1 = random.random() * max_range - max_range
-			y1 = random.random() * max_range - max_range
-			x2 = random.random() * max_range - max_range
-			y2 = random.random() * max_range - max_range
+			x1 = random.random() * max_range - max_range/2
+			y1 = random.random() * max_range - max_range/2
+			x2 = random.random() * max_range - max_range/2
+			y2 = random.random() * max_range - max_range/2
 
 			# calculate azimuth
 			az = geomath.calculate_azimuth(x1, y1, x2, y2)
