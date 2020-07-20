@@ -20,7 +20,7 @@ def main(args):
     drl.import_from_xml(args.input_file_brd)
     drl_text = drl.get_excellon_format(args.header, args.body)
     if not saveToFile(drl_text, args.output_file_drill):
-        sys.exit('[ ERROR ] --- Can\'t save the output file!')
+        sys.exit('[ ERROR ] --- Can\'t save the output file!', 1)
     else:
         print('Total holes found: {}'.format(drl.count_all_holes()))
         print('File saved as: {}'.format(args.output_file_drill))
@@ -54,9 +54,9 @@ if __name__ == "__main__":
             answer = input(
                 'Output file already exists. Do you realy want to overwrite? [y/n]')
             if answer.upper() != 'Y':
-                sys.exit('OK, exiting process.')
+                sys.exit('OK, exiting process.', 0)
     else:
         sys.exit('[ WARNING] --- Not found import file: {}'
-                 .format(args.input_file_brd))
+                 .format(args.input_file_brd), 1)
 
     main(args)

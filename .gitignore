@@ -1,7 +1,9 @@
 *.brd
-__pycache__/
 *.ini
 *.gko
 *.txt
 *.b##
 __.*
+
+__pycache__/
+uploads/
